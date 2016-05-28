@@ -166,11 +166,9 @@ void PCB::copyStack(PCB* parPCB){
 			mov ax, [bp]
 			mov iterBP, ax
 		}
-		cout<< "iterBP: " << iterBP << endl;
 		if (iterBP == parLAST) break;
 			
 	           tempBP = iterBP - parentBP + childBP;
-				 cout<< "tempBP: " << tempBP << endl;
 			   asm{
 				  mov ss, childSS
 				  mov bp, childBP
@@ -178,9 +176,7 @@ void PCB::copyStack(PCB* parPCB){
 				  mov [bp], ax
 			   }
                parentBP=iterBP;
-			   childBP=tempBP;
-			  cout<< "parentBP: " << parentBP << endl;
-              cout<< "childBP: " << childBP << endl;			  
+			   childBP=tempBP;			  
 		}
 	
 	

@@ -130,7 +130,6 @@ void Consumer::run () {
 
 int userMain (int argc, char* argv[])
 {
-	/*
 	BoundedBuffer *buff;
 	Consumer *con;
 	
@@ -173,7 +172,7 @@ int userMain (int argc, char* argv[])
 	delete kev;
 	delete con;
 	delete buff;
-*/
+	
 #ifdef FORK
 const int value = 5;
 	int data = 0, *pData = &data;

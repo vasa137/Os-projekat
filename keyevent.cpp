@@ -3,7 +3,7 @@
 //   File:    keyevent.cpp
 //   Date:    Jun 2016
 //===========================================================================//
-/*
+
 #include <iostream.h>
 #include <dos.h>
 
@@ -89,4 +89,3 @@ void KeyboardEvent::run()
 	intUnlock
 
 }
-*/

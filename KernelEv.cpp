@@ -38,7 +38,6 @@ void KernelEv::deblock(){
 /* val can be in {-1, 0, 1}, -1 -> thread suspended */
 
 void KernelEv::signal() {
-	cout << "USAO SIGNAL" << endl;
 	if(val < 1 && val++ < 0) deblock();
 }
 /* if val == 1 don't increment */
