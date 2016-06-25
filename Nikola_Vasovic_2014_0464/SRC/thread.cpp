@@ -4,18 +4,21 @@
 #include "IdleThr.h"
 #include "lock.h"
 #include "Semaphor.h"
+#include "List.h"
 #include <dos.h>
 #include <iostream.h>
+
 extern volatile unsigned int contextChangeRequested;
 
 unsigned int dispatchSeg, dispatchOff;
 
 void Thread::start(){
-	_lock_ //
+	_lock_ 
 	myPCB->setState(READY);
+	PCB::numberOfActiveThreads ++;
 	myPCB->createThread();
 	Scheduler::put(myPCB);
-	_unlock_//
+	_unlock_
 }
 
 void Thread::waitToComplete(){
@@ -27,24 +30,28 @@ void Thread::waitToComplete(){
 	
 	PCB::running->setState(BLOCKED);
 	myPCB->getPendingList()->add(PCB::running);
-	_unlock_//
+	_unlock_
 	
 	dispatch();
 } 
+
+extern volatile PCB* removablePCB;
 
 Thread::~Thread(){
 	_lock_
 	waitToComplete();
 	_lock_
 	
-	myPCB->setThread(NULL);
-	
 	if(myPCB == PCB::running){
 		PCB::running->setState(FINISHED);
+		PCB::numberOfActiveThreads--;
 		PCB::running->freePendingList();
+		
 		if(PCB::running->getParent() != NULL) PCB::running->getParent()->getChildrenSemaphore().signal();
+		
 		dispatchSeg = FP_SEG(&dispatch);
 		dispatchOff = FP_OFF(&dispatch);
+		
 		asm{
 				push ax
 				mov ax, dispatchSeg
@@ -52,7 +59,9 @@ Thread::~Thread(){
 				mov ax, dispatchOff
 				mov [bp+02], ax
 				pop ax
-			}		
+			}
+	
+		
 	}
 	_unlock_
 } 
@@ -85,10 +94,12 @@ void dispatch (){
 
 	contextChangeRequested = 1;
 	
-	asm{
-		int 08h
-		popf
-	}
+	asm	int 08h
+	_lock_
+	if(removablePCB != NULL) delete removablePCB;
+	removablePCB = NULL;
+	_unlock_
+	asm popf 
 }
 
 /*fork*/

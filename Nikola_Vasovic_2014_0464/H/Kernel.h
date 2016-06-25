@@ -3,35 +3,44 @@
 
 class PCB;
 class IdleThread;
-typedef void interrupt (*pInterrupt)(...);
 
+typedef void interrupt (*pInterrupt)(...);
 
 class Kernel{
    public:
 		static Kernel* getInstance();
-		
+	
+		static void interrupt newTimer(...); //interrupt routine
+	
         void startUp();
-	    void terminate();
 		void initUserMainThread(int,char**);
-		static void interrupt newTimer(...);
+	    void terminate();
+		
+		/*static fields getters*/
 		static IdleThread* getIdleThread();
 		static PCB* getmainPCB();
 		
    private:
         static Kernel* instance;
 		
-		pInterrupt oldRoutine;
-		Kernel(){}
+		/*initialization*/
 	    void initIVT();
-		void restoreIVT();
 		void initSystemThreads();
+		
+		/*restauration*/
+		void restoreIVT();
 		void removeUserThreads();
 		void removeSystemThreads();
+		void removeWaitList();
+		
+		/*Main wait*/
 		void waitForUserThreads();
-		void Mainblock();
-		void removeSemaphoreList();
+
+		/*static fields*/
 		static IdleThread* idleThread;
 		static PCB* mainPCB; 
+		
+		pInterrupt oldRoutine; // pointer to and old routine from entry 08h
 };
 
 #endif

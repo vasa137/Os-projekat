@@ -1,63 +1,75 @@
 #include "PCB.h"
 #include "SCHEDULE.h"
 #include "KernSem.h"
+#include "List.h"
+#include "Queue.h"
 
 List::List() : first(NULL), last(NULL), number(0) {}
 
-List::Elem::Elem(PCB* prcb) : pcb(prcb), next(NULL) {}
+List::Elem::Elem(PCB* newpcb,Elem* nxt) : pcb(newpcb), next(nxt) {}
 
 List::~List(){
 	while(first != NULL){
-		Elem* temp = first;
+		Elem* old = first;
 		first = first->next;
-		delete temp;
+		delete old;
 	}
-	number=0;
+	number = 0;
 	last = NULL;
 }
 
 void List::add(PCB* pcb){
-	Elem* newelem = new Elem(pcb);
-	if(!first) first = newelem;
-	else last->next = newelem;
-	last = newelem;
+	Elem* elem = new Elem(pcb);
+	if(first == NULL) first = elem;
+	else last->next = elem;
+	last = elem;
 	number++;
 }
 
-PCB* List::get(ID threadId) const{
+PCB* List::get(unsigned int threadId) const{
 	Elem* curr = first;
-	while(curr != NULL && curr->pcb->getId()!= threadId){
+	while(curr != NULL && curr->pcb->getId() != threadId){
 		curr = curr->next;
 	}
 	if (curr==NULL) return NULL;
 	return curr->pcb;
 }
 
-PCB* List::remove(ID threadId){
+PCB* List::remove(unsigned int thrID){
 	Elem* curr = first,*prev = NULL;
 	
-	while(curr != NULL && curr->pcb->getId() != threadId){
+	while(curr != NULL && curr->pcb->getId() != thrID){
 		prev = curr;
 		curr = curr->next;
 	}
 	
 	if(curr == NULL) return NULL;
 	
+	PCB* removedPCB = curr->pcb;
+	
 	if(prev == NULL) first = curr->next;
 	else prev->next = curr->next;
 	
 	if(last == curr) last = prev;
-	if( first == NULL ) last = NULL;
 	
-	PCB* pcb = curr->pcb;
 	delete curr;
 	number --;
-	return pcb;
+	return removedPCB;
 }
 
-PCB* List::getFirstPCB() const{
-	if(first==NULL) return NULL;
-	return first->pcb;
+void List::removeParent(PCB* pcb){
+	Elem* curr = first;
+	while(curr != NULL){
+		if(curr->pcb->getParent() == pcb ) {
+			curr->pcb->setParent(NULL);
+		}
+		curr = curr->next;
+	}
+}
+
+PCB* List::getFirstPCB() const {
+	if(first == NULL) return NULL;
+	else return first->pcb;
 }
 
 PCB* List::removeFirstPCB() {
@@ -71,27 +83,6 @@ int List::isEmpty() const {
 
 int List::getNum() const{
 	return number;
-}
-
-int List::all_new() const{
-   int num=0;
-   Elem *fir=first;
-   while(fir != NULL){
-	    if(fir->pcb->getState() !=NEW) num++;
-		fir = fir->next;
-	}
-   return (num==0);
-}
-
-void List::delete_all_new(){
-   Elem *delPCB;
-   while(first!= NULL){
-	    delPCB=first;
-		first= first->next;
-		delete delPCB->pcb;
-		delete delPCB;
-	}
-	last=NULL;
 }
 
 void List::sort_insert(PCB *pcbinfo){
@@ -118,55 +109,51 @@ void List::sort_insert(PCB *pcbinfo){
 }
 
 void List::decTime(){
-	
-	if(first!=NULL && --first->pcb->blockTimeLeft==0){
-		
-		while(first!=NULL && first->pcb->blockTimeLeft==0){
+	if(first!=NULL && --first->pcb->blockTimeLeft==0){	
+		while(first != NULL && first->pcb->blockTimeLeft == 0){
 			
-			PCB *elem=first->pcb;
-			Elem* delElem=first;
+			PCB* unblockedPCB = first->pcb;
+			Elem* oldElem=first;
 			first=first->next;
 			
-			elem->blockSem->incVal();
+			unblockedPCB->blockSem->incVal();
+			unblockedPCB->setUnblockedBySignal(0);
+			unblockedPCB->state=READY;
+		    Scheduler::put(unblockedPCB);
 			
-			elem->setUnblockedBySignal(0);
-	
-			elem->state=READY;
-		    Scheduler::put(elem);
+			unblockedPCB->blockSem->getSemaphoreQueue()->remove(unblockedPCB->threadId);
+			unblockedPCB->blockSem=NULL;
 			
-			elem->blockSem->getWaitingSemaphoreList()->remove(elem->threadId);
+			delete oldElem;
 			
-			elem->blockSem=NULL;
-			number--;
-			delete delElem;
-			
+			number--;	
 		}
-		
 		if(first==NULL) last=NULL;
 	}
 }
 
-void List::remove_fromTimerList(PCB* DelPCB){
+void List::removePCB(PCB* toDelete){
 	
 	Elem* curr = first;
-	Elem*prev = NULL;
+	Elem* prev = NULL;
 	
-	while(curr != NULL && (curr->pcb!=DelPCB)){
+	while(curr != NULL && (curr->pcb != toDelete)){
 		prev = curr;
 		curr = curr->next;
 	}
+	
 	if(curr == NULL) return;
 	
 	if (curr->next!=NULL) {
-		curr->next->pcb->blockTimeLeft+=curr->pcb->blockTimeLeft;
+		curr->next->pcb->blockTimeLeft += curr->pcb->blockTimeLeft;
 	}
 	
 	if(prev == NULL) first = curr->next;
 	else prev->next = curr->next;
 	
 	if(last == curr) last = prev;
-	
+		
 	delete curr;
-	number --;
 	
+	number --;
 }

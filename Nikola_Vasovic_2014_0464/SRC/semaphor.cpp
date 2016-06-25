@@ -4,15 +4,21 @@
 
 
 Semaphore::Semaphore (int init){
-	_lock_
+	asm{
+		pushf
+		cli
+	}
 	myImpl = new KernelSem(init);
-	_unlock_
+	asm popf
 }
 
 Semaphore::~Semaphore (){
-	_lock_
+	asm{
+		pushf
+		cli
+	}
 	delete myImpl;
-	_unlock_
+	asm popf
 }
 
 int Semaphore::wait(Time maxTimeToWait){

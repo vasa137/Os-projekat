@@ -8,11 +8,17 @@ typedef void interrupt (*pInterrupt)(...);
 class IVTEntry{
 public:
 	IVTEntry(IVTNo ivtNo, pInterrupt interruptRoutine);
+	~IVTEntry();
+	
 	void signal();
 	void callOldRoutine();
-	~IVTEntry();
-	void setKernelEv(KernelEv* event);
+
+	//getter
 	static IVTEntry* getEntry(IVTNo ivtNo);
+	
+	//setter
+	void setKernelEv(KernelEv* event);
+	
 private:
 	int entryNum;
 	pInterrupt oldRoutine;

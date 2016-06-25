@@ -1,7 +1,8 @@
 #include <iostream.h>
 #include "Kernel.h"
+#include "UserMain.h"
 
-int returnValue = 0;
+volatile int returnValue = 0;
 
 int main (int argc, char* argv[]){
 	Kernel* kernel = Kernel::getInstance();
